@@ -42,11 +42,11 @@ compare-stdin: proj1
 #
 # run the entire test suite within your current directory
 test:
-        ${HW1}/Tests/test.proj1
+        ${HW1}/run_tests.pl
 
 # run a single test using the command, e.g. "make singletest TEST=t001"
 singletest:
-        ${HW1}/Tests/$(TEST)
+        ${HW1}/run_tests.pl $(TEST)
 
 
 # Submission and Testing
