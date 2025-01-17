@@ -14,8 +14,12 @@ int main(int argc, char **argv)
     
     string_t *output = string_malloc(INITIAL_BUFFER_SIZE);
 
-    FILE *in = fopen(argv[1], "r");
-    if (in != NULL) {
+    delete_comments(argc, argv, output);
+
+    //FILE *in = fopen(argv[1], "r");
+    //if (in != NULL) {
+
+        /*
         enum state curr = PLAINTEXT;
         int ch;
         while ((ch = fgetc(stdin)) != EOF) {
@@ -46,27 +50,28 @@ int main(int argc, char **argv)
                     break;
             }
         }
+        */
 
         // display data from output buffer
         printf(output->data);
         string_free(output);
-    }
+    //}
 }
 
 string_t *string_malloc(size_t capacity) {
     if (capacity < 1) {
-        DIE("Error: %s\n", "Invalid argument to string_malloc function.\n");
+        DIE("Error: %s\n", "Invalid argument to string_malloc function.");
     }
     string_t *result = malloc(sizeof(string_t));
     if (result == NULL) {
-        DIE("Error: %s\n", "Failed to allocate memory for string_t.\n");
+        DIE("Error: %s\n", "Failed to allocate memory for string_t.");
     }
     else {
         result->data = malloc(sizeof(char) * capacity);
         result->size = 0;
         result->capacity = capacity;
         if (result->data == NULL) {
-            DIE("Error: %s\n", "Failed to allocate memory for string_t data.\n");
+            DIE("Error: %s\n", "Failed to allocate memory for string_t data.");
         }
         result->data[0] = '\0';
         return result;
@@ -104,7 +109,7 @@ void string_grow(string_t *str, size_t new_capacity) {
         str->data = realloc(str->data, new_capacity);
         str->capacity = new_capacity;
         if (str == NULL || str->data == NULL) {
-            DIE("Error: %s\n", "Failed to re-allocate memory for string_t.\n");
+            DIE("Error: %s\n", "Failed to re-allocate memory for string_t.");
         }
     }
 }
@@ -120,7 +125,7 @@ void string_free(string_t *str) {
 macro_dict *create_macro_dict() {
     macro_dict *md = malloc(sizeof(macro_dict));
     if (md == NULL) {
-        DIE("Error: %s\n", "Failed to allocate memory for Macro dictionary.\n");
+        DIE("Error: %s\n", "Failed to allocate memory for Macro dictionary.");
     }
     md->macros = malloc(sizeof(string_t *) * INITIAL_MACRO_DICT_CAPACITY);
     md->size = 0;
@@ -132,4 +137,54 @@ macro_dict *create_macro_dict() {
         }
     }
     return md;
+}
+
+void delete_comments(int argc, char **argv, string_t *result) {
+    if (argv == NULL || result == NULL || argc < 2) {
+        DIE("Error: %s\n", "Invalid arguments to delete_comments function.");
+    }
+
+    for (int i = 1; i < argc; i++) {
+        FILE *in = fopen(argv[i], "r");
+        if (in == NULL) {
+            DIE("Error: Could not open file %s\n", argv[i]);
+        }
+        enum state curr = PLAINTEXT;
+        int ch;
+        while ((ch = fgetc(in)) != EOF) {
+            switch (curr)
+            {
+                case PLAINTEXT:
+                    if (ch == '%') {
+                        curr = COMMENT;
+                    }
+                    else if (ch == '\\') {
+                        curr = ESCAPE;
+                        string_putchar(result, ch);
+                    }
+                    else {
+                        string_putchar(result, ch);
+                    }
+                    break;
+
+                case COMMENT:
+                    if (ch == '\n') {
+                        curr = COMMENT_NEWLINE;
+                    }
+                    break;
+                
+                case COMMENT_NEWLINE:
+                    if (!isspace(ch)) {
+                        curr = PLAINTEXT;
+                        string_putchar(result, ch);
+                    }
+                    break;
+                
+                case ESCAPE:
+                    curr = PLAINTEXT;
+                    string_putchar(result, ch);
+                    break;
+            }
+        }
+    }
 }

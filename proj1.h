@@ -47,6 +47,18 @@ void string_free(string_t *str);
  * initialized to NULL.
  * It is the caller's duty to free the memory allocated by
  * the function.
- * @return the pointer to the newly created macro_dict
+ * @return the pointer to the newly created macro_dict.
 */
 macro_dict *create_macro_dict();
+
+/**
+ * Goes through each individual file passed in as arguments
+ * and deletes comments.
+ * @param argc the number of command arguments of type int.
+ * @param argv a pointer to an array of the arguments inputted
+ * on the command line. These should contain the filenames starting
+ * from index 1.
+ * @param result a pointer to a string_t output buffer, where
+ * the file content will be put after comments are ommitted.
+ */
+void delete_comments(int argc, char **argv, string_t *result);
