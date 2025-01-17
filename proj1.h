@@ -20,7 +20,7 @@
 #define DOUBLE(ptr,nmemb) realloc (ptr, (nmemb *= 2) * sizeof(*ptr))
 
 #define INITIAL_MACRO_DICT_CAPACITY 4
-#define INITIAL_BUFFER_SIZE 256
+#define INITIAL_BUFFER_SIZE 128
 
 // string struct
 typedef struct {
@@ -40,7 +40,7 @@ void string_putchar(string_t *str, char c);
 void string_putstring(string_t *str1, string_t *str2);
 void string_grow(string_t *str, size_t new_capacity);
 string_t *string_malloc(size_t capacity);
-void string_free(string_t str);
+void string_free(string_t *str);
 
 /**
  * Creates empty macro dictionary. The entries should be
