@@ -12,9 +12,78 @@ int main(int argc, char **argv)
         DIE("USAGE: %s filename\n", argv[0]);
     }
     
-    string_t *output = string_malloc(INITIAL_BUFFER_SIZE);
+    string_t *input = string_malloc(INITIAL_OUTPUT_SIZE);
 
-    delete_comments(argc, argv, output);
+    // remove comments from file(s) and concatenate into input string_t
+    delete_comments(argc, argv, input);
+
+    // a buffer for fully processed output
+    string_t *output = string_malloc(INITIAL_OUTPUT_SIZE);
+    // a buffer for macronames
+    string_t *macroname = string_malloc(INITIAL_BUFFER_SIZE);
+    // a dictionary for macros
+    macro_dict *md = create_macro_dict();
+
+    enum state curr = PLAINTEXT;
+
+    // creates a pointer starting at the first character of the input
+    for (int i = 0; i < input->size; i++) {
+        char *ch = input->data[i];
+        switch (curr) 
+        {
+            case PLAINTEXT:
+                if (*ch == '\\') {
+                    curr = ESCAPE;
+                }
+                else {
+                    string_putchar(output, *ch);
+                }
+                break;
+
+            case ESCAPE:
+                if (isalnum(*ch)) {
+                    curr = MACRO;
+                    string_clear(macroname);
+                    // start a character buffer that keeps track of the macro name
+                    string_putchar(macroname, *ch);
+                }
+                else {
+                    string_putchar(output, *ch);
+                    curr = PLAINTEXT;
+                }
+                break;
+            
+            case MACRO:
+                if (isalnum(*ch)) {
+                    string_putchar(macroname, *ch);
+                }
+                else if (*ch == '{') {
+                    // check if valid macro here!
+                    curr = CHECK_MACRO;
+                }
+                else {
+                    DIE("Error: %s\n", "Invalid character in Macroname.");
+                }
+                break;
+            
+            case CHECK_MACRO:
+                // check if it's built-in
+                if (strcmp(macroname->data, "def")==0) {
+
+                }
+
+                // check if it's user-defined
+                else if(contains_macro(md, macroname)) {
+
+                }
+                
+                // throw error if invalid macroname
+                else {
+                    DIE("Error: %s\n", "Macro not defined.");
+                }
+                break;
+        }
+    }
 
     //FILE *in = fopen(argv[1], "r");
     //if (in != NULL) {
@@ -121,22 +190,106 @@ void string_free(string_t *str) {
         free(str);
     }
 }
+void string_clear(string_t *str) {
+    str->data[0] = '\0';
+    str->size = 0;
+}
 
 macro_dict *create_macro_dict() {
     macro_dict *md = malloc(sizeof(macro_dict));
     if (md == NULL) {
         DIE("Error: %s\n", "Failed to allocate memory for Macro dictionary.");
     }
-    md->macros = malloc(sizeof(string_t *) * INITIAL_MACRO_DICT_CAPACITY);
-    md->size = 0;
     md->capacity = INITIAL_MACRO_DICT_CAPACITY;
-    md->max_length = 0;
-    if (md->macros != NULL) {
-        for (int i = 0; i < md->capacity; i++) {
-            md->macros[i] = NULL;
-        }
+    md->size = 0;
+    md->table = calloc(md->capacity, sizeof(macro *));
+    if (md->table == NULL) {
+        DIE("Error: %s\n", "Failed to allocate memory for Macro dictionary hash table.");
     }
     return md;
+}
+
+size_t hash(char *key, size_t capacity) {
+    size_t hash_value = 0;
+    while (*key) {
+        hash_value = (hash_value * 31 + *key) % capacity;
+        key++;
+    }
+    return hash_value;
+}
+bool contains_macro(macro_dict *md, string_t *name) {
+    size_t index = hash(name->data, md->capacity);
+    macro *curr = md->table[index];
+
+    while (curr != NULL) {
+        if (strcmp(name->data, curr->name->data) == 0) {
+            return true;
+        }
+        curr = curr->next;
+    }
+    return false;
+}
+void add_macro(macro_dict *md, string_t *name, string_t *value) {
+    size_t index = hash(name->data, md->capacity);
+    
+    macro *curr = md->table[index];
+
+    macro *m = malloc(sizeof(macro));
+    if (m == NULL) {
+        DIE("Error: %s\n", "Failed to allocate memory for Macro.");
+    }
+
+    m->next = curr;
+    md->table[index] = m;
+
+    // copy name's data to new string_t
+    m->name->data = string_malloc(name->size + 2);
+    strcpy(m->name->data, name->data);
+    m->name->capacity = name->size + 2;
+    m->name->size = name->size;
+
+    // copy value's data to new string_t
+    m->value->data = string_malloc(value->size + 2);
+    strcpy(m->value->data, value->data);
+    m->value->capacity = value->size + 2;
+    m->value->size = value->size;
+
+    md->size++;
+}
+void delete_macro(macro_dict *md, string_t *name) {
+    size_t index = hash(name->data, md->capacity);
+    macro *curr = md->table[index];
+    macro *prev =  NULL;
+    while (curr != NULL) {
+        if (strcmp(name->data, curr->name->data) == 0) {
+            if (prev == NULL) {
+                md->table[index] = curr->next;
+            }
+            else {
+                prev->next = curr->next;
+            }
+            string_free(curr->name);
+            string_free(curr->value);
+            free(curr);
+            md->size--;
+        }
+        prev = curr;
+        curr = curr->next;
+    }
+}
+void free_dict(macro_dict *md) {
+    for (int i = 0; i < md->capacity; i++) {
+        macro *curr = md->table[i];
+        while (curr != NULL) {
+            macro *temp = curr;
+            curr = curr->next;
+            string_free(temp->name);
+            string_free(temp->value);
+            free(temp);
+        }
+        free(md->table);
+
+    }
 }
 
 void delete_comments(int argc, char **argv, string_t *result) {

@@ -19,8 +19,9 @@
 // NMEMB accordingly.  (NMEMB is only the size in bytes if PTR is a char *.)
 #define DOUBLE(ptr,nmemb) realloc (ptr, (nmemb *= 2) * sizeof(*ptr))
 
-#define INITIAL_MACRO_DICT_CAPACITY 4
-#define INITIAL_BUFFER_SIZE 128
+#define INITIAL_MACRO_DICT_CAPACITY 8
+#define INITIAL_BUFFER_SIZE 16
+#define INITIAL_OUTPUT_SIZE 128
 
 // string struct
 typedef struct {
@@ -30,10 +31,15 @@ typedef struct {
 } string_t;
 
 typedef struct {
-    string_t **macros;
+    string_t *name;
+    string_t *value;
+    struct macro *next;
+} macro;
+
+typedef struct {
+    macro **table;
     size_t size;
     size_t capacity;
-    size_t max_length;
 } macro_dict; 
 
 void string_putchar(string_t *str, char c);
@@ -41,6 +47,7 @@ void string_putstring(string_t *str1, string_t *str2);
 void string_grow(string_t *str, size_t new_capacity);
 string_t *string_malloc(size_t capacity);
 void string_free(string_t *str);
+void string_clear(string_t *str);
 
 /**
  * Creates empty macro dictionary. The entries should be
@@ -50,6 +57,28 @@ void string_free(string_t *str);
  * @return the pointer to the newly created macro_dict.
 */
 macro_dict *create_macro_dict();
+
+// hash table implementation functions
+size_t hash(char *key, size_t capacity);
+/**
+ * Return true if macroname is contained in 
+ * macro dictionary. Should be used when adding (defining)
+ * or deleting (undefining) a macro.
+ */
+bool contains_macro(macro_dict *md, string_t *name);
+/**
+ * Creates a macro with given name and value and
+ * adds it to the macro_dictionary by hashing it,
+ * adding it to the linked list at the hashkey
+ * index.
+ * Dynamically allocated. Caller's duty to free
+ * space when done with macro or deleting a macro.
+ * @param name a pointer to macroname.
+ * @param value a pointer to macro's value.
+ */
+void add_macro(macro_dict *md, string_t *name, string_t *value);
+void delete_macro(macro_dict *md, string_t *name);
+void free_dict(macro_dict *md);
 
 /**
  * Goes through each individual file passed in as arguments
