@@ -48,6 +48,7 @@ void string_grow(string_t *str, size_t new_capacity);
 string_t *string_malloc(size_t capacity);
 void string_free(string_t *str);
 void string_clear(string_t *str);
+string_t *string_copy(string_t *str);
 
 /**
  * Creates empty macro dictionary. The entries should be
@@ -73,8 +74,10 @@ bool contains_macro(macro_dict *md, string_t *name);
  * index.
  * Dynamically allocated. Caller's duty to free
  * space when done with macro or deleting a macro.
- * @param name a pointer to macroname.
- * @param value a pointer to macro's value.
+ * @param name a pointer to macroname, a copy of what
+ * was put into the argument buffer.
+ * @param value a pointer to macro's value, a copy of 
+ * what was put into the argument buffer.
  */
 void add_macro(macro_dict *md, string_t *name, string_t *value);
 void delete_macro(macro_dict *md, string_t *name);
@@ -91,3 +94,5 @@ void free_dict(macro_dict *md);
  * the file content will be put after comments are ommitted.
  */
 void delete_comments(int argc, char **argv, string_t *result);
+
+void expand(macro_dict *md, string_t *input, string_t *output);

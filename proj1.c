@@ -1,7 +1,8 @@
 #include "proj1.h"
 
 // add more states here! maybe ERROR?
-enum state {PLAINTEXT, ESCAPE, MACRO, COMMENT, COMMENT_NEWLINE, CHECK_MACRO};
+enum state {PLAINTEXT, ESCAPE, MACRO, COMMENT, COMMENT_NEWLINE, DEF_NAME,
+            DEF_VALUE};
 
 int main(int argc, char **argv)
 {
@@ -19,71 +20,13 @@ int main(int argc, char **argv)
 
     // a buffer for fully processed output
     string_t *output = string_malloc(INITIAL_OUTPUT_SIZE);
-    // a buffer for macronames
-    string_t *macroname = string_malloc(INITIAL_BUFFER_SIZE);
+
     // a dictionary for macros
     macro_dict *md = create_macro_dict();
 
-    enum state curr = PLAINTEXT;
+    expand(md, input, output);
 
-    // creates a pointer starting at the first character of the input
-    for (int i = 0; i < input->size; i++) {
-        char *ch = input->data[i];
-        switch (curr) 
-        {
-            case PLAINTEXT:
-                if (*ch == '\\') {
-                    curr = ESCAPE;
-                }
-                else {
-                    string_putchar(output, *ch);
-                }
-                break;
-
-            case ESCAPE:
-                if (isalnum(*ch)) {
-                    curr = MACRO;
-                    string_clear(macroname);
-                    // start a character buffer that keeps track of the macro name
-                    string_putchar(macroname, *ch);
-                }
-                else {
-                    string_putchar(output, *ch);
-                    curr = PLAINTEXT;
-                }
-                break;
-            
-            case MACRO:
-                if (isalnum(*ch)) {
-                    string_putchar(macroname, *ch);
-                }
-                else if (*ch == '{') {
-                    // check if valid macro here!
-                    curr = CHECK_MACRO;
-                }
-                else {
-                    DIE("Error: %s\n", "Invalid character in Macroname.");
-                }
-                break;
-            
-            case CHECK_MACRO:
-                // check if it's built-in
-                if (strcmp(macroname->data, "def")==0) {
-
-                }
-
-                // check if it's user-defined
-                else if(contains_macro(md, macroname)) {
-
-                }
-                
-                // throw error if invalid macroname
-                else {
-                    DIE("Error: %s\n", "Macro not defined.");
-                }
-                break;
-        }
-    }
+    printf("md size %ld\n", md->size);
 
     //FILE *in = fopen(argv[1], "r");
     //if (in != NULL) {
@@ -122,8 +65,8 @@ int main(int argc, char **argv)
         */
 
         // display data from output buffer
-        printf(output->data);
-        string_free(output);
+        //printf(output->data);
+        //string_free(output);
     //}
 }
 
@@ -194,6 +137,16 @@ void string_clear(string_t *str) {
     str->data[0] = '\0';
     str->size = 0;
 }
+string_t *string_copy(string_t *str) {
+    if (str == NULL) {
+        DIE("Error: %s\n", "Invalid argument to string_copy function.");
+    }
+    string_t *new = string_malloc(str->size + 1);
+    strcpy(new->data, str->data);
+    new->size = str->size;
+    new->capacity = str->size + 1;
+    return new;
+}
 
 macro_dict *create_macro_dict() {
     macro_dict *md = malloc(sizeof(macro_dict));
@@ -242,17 +195,8 @@ void add_macro(macro_dict *md, string_t *name, string_t *value) {
     m->next = curr;
     md->table[index] = m;
 
-    // copy name's data to new string_t
-    m->name->data = string_malloc(name->size + 2);
-    strcpy(m->name->data, name->data);
-    m->name->capacity = name->size + 2;
-    m->name->size = name->size;
-
-    // copy value's data to new string_t
-    m->value->data = string_malloc(value->size + 2);
-    strcpy(m->value->data, value->data);
-    m->value->capacity = value->size + 2;
-    m->value->size = value->size;
+    m->name = name;
+    m->value = value;
 
     md->size++;
 }
@@ -338,6 +282,149 @@ void delete_comments(int argc, char **argv, string_t *result) {
                     string_putchar(result, ch);
                     break;
             }
+        }
+    }
+}
+
+void expand(macro_dict *md, string_t *input, string_t *output) {
+    // a buffer for macronames
+    string_t *macroname = string_malloc(INITIAL_BUFFER_SIZE);
+    string_t *argument1 = string_malloc(INITIAL_BUFFER_SIZE);
+    string_t *argument2 = string_malloc(INITIAL_BUFFER_SIZE);
+
+    size_t bracket_counter = 0;
+
+    enum state curr = PLAINTEXT;
+    bool escaped = false;
+
+    // creates a pointer starting at the first character of the input
+    for (int i = 0; i < input->size; i++) {
+        char *ch = &(input->data[i]);
+        switch (curr) 
+        {
+            case PLAINTEXT:
+                printf("in plaintext\n");
+                if (*ch == '\\') {
+                    curr = ESCAPE;
+                }
+                else {
+                    string_putchar(output, *ch);
+                }
+                break;
+
+            case ESCAPE:
+                printf("in escape\n");
+                if (isalnum(*ch)) {
+                    curr = MACRO;
+                    string_clear(macroname);
+                    // start a character buffer that keeps track of the macro name
+                    string_putchar(macroname, *ch);
+                }
+                else {
+                    string_putchar(output, *ch);
+                    curr = PLAINTEXT;
+                }
+                break;
+            
+            case MACRO:
+                printf("in macro\n");
+                if (isalnum(*ch)) {
+                    string_putchar(macroname, *ch);
+                }
+                else if (*ch == '{') {
+                    // check if macro is a built-in
+                    if (strcmp(macroname->data, "def") == 0) {
+                        string_clear(argument1);
+                        curr = DEF_NAME;
+                    }
+                    // check if macro is user-defined
+                    else if (contains_macro(md, macroname)) {
+
+                    }
+                    // check if macro is invalid
+                    else {
+                        DIE("Error: %s\n", "Macro not defined.");
+                    }
+                }
+                else {
+                    DIE("Error: %s\n", "Invalid character in Macroname.");
+                }
+                break;
+
+            case DEF_NAME:
+                printf("in defname\n");
+                if (isalnum(*ch)) {
+                    string_putchar(argument1, *ch);
+                }
+                else if (*ch == '}') {
+                    if (argument1->size == 0) {
+                        DIE("Error: %s\n", "Invalid character in Macroname.");
+                    }
+
+                    if (contains_macro(md, argument1)) {
+                        DIE("Error: %s\n", "Cannot redefine macro.");
+                    }
+                    else {
+                        string_clear(argument2);
+                        curr = DEF_VALUE;
+                    }
+                }
+                else {
+                    DIE("Error: %s\n", "Invalid character in Macroname.");
+                }
+                break;
+            
+            case DEF_VALUE:
+                printf("in defvalue\n");
+                if (*ch == '\\') {
+                    if (escaped == true) {
+                        escaped = false;
+                    }
+                    else {
+                        escaped = true;
+                    }
+                    string_putchar(argument2, *ch);
+                    printf("recording %c\n", *ch);
+                }
+                else if (*ch == '}') {
+                    if (escaped == true) {
+                        escaped = false;
+                        string_putchar(argument2, *ch);
+                        printf("recording %c\n", *ch);
+                    }
+                    else {
+                        bracket_counter--;
+                        if (bracket_counter == 0) {
+                            add_macro(md, argument1, argument2);
+                            curr = PLAINTEXT;
+                        }
+                        else {
+                            string_putchar(argument2, *ch);
+                            printf("recording %c\n", *ch);
+                        }
+                    }
+                }
+                else if (*ch == '{') {
+                    if (escaped == true) {
+                        escaped = false;
+                    }
+                    else {
+                        bracket_counter++;
+                    }
+                    // if it's not the first { bracket of argument2
+                    if (!(argument2->size == 0 && *(ch - 1) == '}')) {
+                        string_putchar(argument2, *ch);
+                        printf("recording %c\n", *ch);
+                    }
+                }
+                else {
+                    if (escaped == true) {
+                        escaped = false;
+                    }
+                    string_putchar(argument2, *ch);
+                    printf("recording %c\n", *ch);
+                }
+                break;
         }
     }
 }
