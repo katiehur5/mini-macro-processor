@@ -3,7 +3,7 @@
 # variables for compiling rules
 SHELL=/bin/bash
 CC=gcc
-CFLAGS=-Wall -pedantic -std=c11
+CFLAGS=-static -g -Wall -pedantic -std=c11
 
 # paths for testing/submitting
 HW1=/c/cs323/proj1
@@ -58,7 +58,3 @@ submit:
 # check which files have been submitted and when
 check:
 	${BIN}/check 1
-
-# run the test suite on your submitted code
-testit:
-	${BIN}/testit 1 proj1

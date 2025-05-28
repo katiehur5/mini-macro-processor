@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Very long input with no macros but some escape chars!
+
+TESTS=./harness/customTests
+RUN=/c/cs323/bin/run
+
+$TESTS/t14.pl   100000 | /usr/bin/valgrind -q ./proj1 | /usr/bin/wc -c
+		
+$TESTS/t14.pl  1000000 | $RUN                 ./proj1 | /usr/bin/wc -c
+
+$TESTS/t14.pl 10000000 | $RUN                 ./proj1 | /usr/bin/wc -c

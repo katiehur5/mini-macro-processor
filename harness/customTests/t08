@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Errors: Redefine macro
+
+(/usr/bin/valgrind -q ./proj1 <<END >/dev/null) |& /usr/bin/wc -l
+\def{hello}{world}
+\def{hello}{class}
+END

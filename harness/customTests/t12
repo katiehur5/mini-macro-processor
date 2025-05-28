@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Escape followed by non-alphanumeric
+/usr/bin/valgrind -q ./proj1 <<END
+\.\&\@
+END

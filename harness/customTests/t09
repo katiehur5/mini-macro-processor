@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Def: No replacement
+/usr/bin/valgrind -q ./proj1 <<END
+\def{hello}{world}\hello{banana}
+END

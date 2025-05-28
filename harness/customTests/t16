@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Include split over two files
+(/usr/bin/valgrind -q /c/cs323/proj1/proj1 <<END >/dev/null) |& /usr/bin/wc -l
+\include{./harness/customTests/t16a}\include{./harness/customTests/t16b}
+END

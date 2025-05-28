@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Errors: Undef without def
+
+(/usr/bin/valgrind -q ./proj1 <<END >/dev/null) |& /usr/bin/wc -l
+\def{test}{“I say: #”}
+\expandafter{\}{test}{hello}
+END
+
+

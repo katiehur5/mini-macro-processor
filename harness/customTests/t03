@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Errors: Macro name not alphanumeric
+
+(/usr/bin/valgrind -q ./proj1 <<END >/dev/null) |& /usr/bin/wc -l
+\def{M@CRO}{VALUE = #}
+END

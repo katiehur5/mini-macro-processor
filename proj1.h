@@ -28,9 +28,9 @@ typedef struct {
     char *data;
     size_t size;
     size_t capacity;
-} string_t;
+} string_t; 
 
-typedef struct {
+typedef struct macro {
     string_t *name;
     string_t *value;
     struct macro *next;
@@ -43,7 +43,21 @@ typedef struct {
 } macro_dict; 
 
 void string_putchar(string_t *str, char c);
-void string_putstring(string_t *str1, string_t *str2);
+/**
+ * @param str1 a pointer to the string_t that will be appended to
+ * @param str2 a pointer to the strint_t that will be copied over 
+ * and appended to str1
+ * @param free if free is 1, str2 must be freed
+ */
+void string_putstring(string_t *str1, string_t *str2, int free);
+/**
+ * @param str1 a pointer to the string_t that will be appended to
+ * @param str2 a pointer to the strint_t that will be copied over 
+ * and appended to str1
+ * @param index str2 will be copied over to str1 from index to the end
+ * @param free if free is 1, str2 must be freed 
+ */
+void string_putsubstring(string_t *str1, string_t *str2, int index, int free);
 void string_grow(string_t *str, size_t new_capacity);
 string_t *string_malloc(size_t capacity);
 void string_free(string_t *str);
@@ -74,14 +88,16 @@ bool contains_macro(macro_dict *md, string_t *name);
  * index.
  * Dynamically allocated. Caller's duty to free
  * space when done with macro or deleting a macro.
- * @param name a pointer to macroname, a copy of what
+ * @param name a pointer to macroname, must a copy of what
  * was put into the argument buffer.
- * @param value a pointer to macro's value, a copy of 
+ * @param value a pointer to macro's value, must make a copy of 
  * what was put into the argument buffer.
  */
 void add_macro(macro_dict *md, string_t *name, string_t *value);
 void delete_macro(macro_dict *md, string_t *name);
 void free_dict(macro_dict *md);
+string_t *get_macro_value(macro_dict *md, string_t *name);
+void print_macros(macro_dict *md);
 
 /**
  * Goes through each individual file passed in as arguments
@@ -94,5 +110,16 @@ void free_dict(macro_dict *md);
  * the file content will be put after comments are ommitted.
  */
 void delete_comments(int argc, char **argv, string_t *result);
+string_t *string_delete_comments(string_t *str);
 
 void expand(macro_dict *md, string_t *input, string_t *output);
+
+/**
+ * Caller's duty to free the returned string.
+ */
+string_t *replace_placeholders(string_t *expanded, string_t *arg);
+
+int record_then_else(string_t *input, string_t *macroname, string_t *arg1, string_t *arg2, size_t index);
+
+string_t *include_file_contents(string_t *input, string_t *arg1, int index, int *end_index);
+void expand_after(string_t *input, string_t *arg1, string_t *arg2, int *index);

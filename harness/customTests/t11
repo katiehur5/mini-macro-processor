@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Comment in middle of value
+/usr/bin/valgrind -q /c/cs323/proj1/proj1 <<END
+\def{hello}{Greetings, #}
+\hello{%this is a comment
+world}
+END

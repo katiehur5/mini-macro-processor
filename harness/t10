@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Expandafter escape
+(/usr/bin/valgrind -q ./proj1 <<END >/dev/null) |& /usr/bin/wc -l
+\def{test}{“I say: #”}
+\expandafter{\\}{test}{hello}
+END
+
+# Expandafter fragment
+/usr/bin/valgrind -q ./proj1 <<END
+\def{test}{“I say: #”}
+\expandafter{\t}{est}{hello}
+END

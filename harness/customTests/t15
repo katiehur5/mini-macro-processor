@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Backslash alone
+/usr/bin/valgrind -q /c/cs323/proj1/proj1 <<END
+\
+END

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Circular macro def
+/usr/bin/valgrind -q ./proj1 <<END
+\def{list}{\if{#}{#, \list}{..., omega}}%
+\list{alpha}{beta}{gamma}{}
+END
